@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemistry Combat</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1f2937, #111827);
+        }
+        .message-box {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 2rem;
+            background-color: #1f2937;
+            border: 2px solid #6b7280;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        .backdrop {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body class="text-gray-200">
+    <div class="backdrop" id="backdrop"></div>
+    <div class="message-box" id="message-box">
+        <div id="message-content" class="text-center"></div>
+        <button id="close-message" class="mt-4 px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105">Close</button>
+    </div>
+
+    <div class="container mx-auto p-4 flex flex-col items-center min-h-screen justify-center">
+        <!-- Main Game Area -->
+        <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-2xl text-center border border-gray-700">
+            <h1 class="text-4xl font-bold mb-4 text-white">Chemistry Combat</h1>
+            <p class="text-sm mb-6 text-gray-400">Battle with the elements!</p>
+
+            <!-- Score and Instructions -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="bg-gray-700 px-4 py-2 rounded-xl border border-gray-600 shadow-inner">
+                    <p class="text-sm font-semibold text-gray-400">Your Score:</p>
+                    <p id="score" class="text-3xl font-bold text-green-400 mt-1">0</p>
+                </div>
+                <div class="text-center">
+                    <button id="start-button" class="px-8 py-3 bg-indigo-500 text-white font-bold rounded-full shadow-lg hover:bg-indigo-600 transition-all duration-300 transform hover:scale-105">Start Challenge</button>
+                </div>
+            </div>
+
+            <!-- Game Display Area -->
+            <div class="relative bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-700 h-96 flex flex-col justify-center items-center" id="game-display">
+                <div class="hidden" id="challenge-screen">
+                    <div class="flex justify-center items-center space-x-8 md:space-x-12">
+                        <!-- User's Element -->
+                        <div class="flex flex-col items-center">
+                            <p class="text-xl mb-2 text-gray-400">Your Choice:</p>
+                            <div id="user-element-card" class="element-card w-28 h-28 md:w-40 md:h-40 bg-gray-700 rounded-3xl p-4 flex flex-col justify-center items-center shadow-lg border-2 border-transparent transition-all duration-300">
+                                <span class="symbol text-5xl md:text-7xl font-bold text-white">?</span>
+                                <span class="name text-xs md:text-sm mt-1 text-gray-300"></span>
+                            </div>
+                        </div>
+
+                        <!-- VS -->
+                        <div class="text-4xl font-extrabold text-white">VS</div>
+
+                        <!-- Computer's Element -->
+                        <div class="flex flex-col items-center">
+                            <p class="text-xl mb-2 text-gray-400">Computer's Element:</p>
+                            <div id="computer-element-card" class="element-card w-28 h-28 md:w-40 md:h-40 bg-gray-700 rounded-3xl p-4 flex flex-col justify-center items-center shadow-lg border-2 border-transparent transition-all duration-300">
+                                <span id="computer-symbol" class="symbol text-5xl md:text-7xl font-bold text-white animate-pulse">?</span>
+                                <span id="computer-name" class="name text-xs md:text-sm mt-1 text-gray-300"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="challenge-details" class="mt-8 text-center hidden">
+                        <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-300 mb-2">Choose Your Element</h3>
+                                <select id="user-element-select" class="bg-gray-700 p-2 rounded-lg text-white">
+                                    <option value="" disabled selected>Select an Element</option>
+                                </select>
+                            </div>
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-300 mb-2">Choose Your Action</h3>
+                                <div class="space-x-4">
+                                    <button id="bond-button" class="px-6 py-2 bg-purple-500 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105">Form a Bond</button>
+                                    <button id="duel-button" class="px-6 py-2 bg-sky-500 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105">Duel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="intro-screen" class="p-6">
+                    <p class="text-lg text-gray-300 mb-4">Click "Start Challenge" to begin!</p>
+                    <p class="text-xs text-gray-500">
+                        <br>
+                        Your inventory includes:
+                        <ul id="user-inventory-list" class="mt-2 text-sm text-gray-400 text-left list-disc list-inside"></ul>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Duel Controls -->
+            <div id="duel-controls" class="mt-6 p-6 bg-gray-800 rounded-2xl shadow-inner border border-gray-700 hidden">
+                <h3 class="text-xl font-bold mb-4">Choose Your Property to Duel</h3>
+                <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-4">
+                    <select id="property-select" class="bg-gray-700 p-3 rounded-lg text-white">
+                        <option value="electronegativity" selected>Electronegativity</option>
+                        <option value="atomicRadius">Atomic Radius</option>
+                        <option value="ionizationEnergy">Ionization Energy</option>
+                    </select>
+                    <button id="execute-duel-button" class="px-6 py-3 bg-red-500 text-white font-bold rounded-full transition-all duration-300 transform hover:scale-105">Execute Duel</button>
+                </div>
+                <div class="mt-4">
+                    <label for="defense-text" class="block text-gray-400 mb-2">Type your defense below:</label>
+                    <textarea id="defense-text" rows="2" class="w-full p-2 rounded-lg bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+                </div>
+            </div>
+
+            <!-- Result Display -->
+            <div id="result-display" class="mt-6 p-4 bg-gray-800 rounded-2xl shadow-inner border border-gray-700 hidden">
+                <h2 id="result-title" class="text-2xl font-bold mb-2"></h2>
+                <p id="result-message" class="text-lg"></p>
+                <div id="property-comparison" class="text-left mt-4 hidden">
+                    <p class="text-gray-400">Your Element: <span id="user-property-value"></span></p>
+                    <p class="text-gray-400">Computer Element: <span id="computer-property-value"></span></p>
+                </div>
+                <p id="tip-message" class="mt-4 font-semibold text-sky-400"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data model for the elements and their properties
+        const elementsData = [
+            // Group 1: Alkali Metals
+            { name: "Lithium", symbol: "Li", group: "1", electronegativity: 0.98, atomicRadius: 152, ionizationEnergy: 520.2 },
+            { name: "Sodium", symbol: "Na", group: "1", electronegativity: 0.93, atomicRadius: 186, ionizationEnergy: 495.8 },
+            { name: "Potassium", symbol: "K", group: "1", electronegativity: 0.82, atomicRadius: 243, ionizationEnergy: 418.8 },
+            { name: "Rubidium", symbol: "Rb", group: "1", electronegativity: 0.82, atomicRadius: 265, ionizationEnergy: 403.0 },
+            { name: "Cesium", symbol: "Cs", group: "1", electronegativity: 0.79, atomicRadius: 298, ionizationEnergy: 375.7 },
+            
+            // Group 2: Alkaline Earth Metals
+            { name: "Beryllium", symbol: "Be", group: "2", electronegativity: 1.57, atomicRadius: 112, ionizationEnergy: 899.5 },
+            { name: "Magnesium", symbol: "Mg", group: "2", electronegativity: 1.31, atomicRadius: 160, ionizationEnergy: 737.7 },
+            { name: "Calcium", symbol: "Ca", group: "2", electronegativity: 1.00, atomicRadius: 197, ionizationEnergy: 589.8 },
+            { name: "Strontium", symbol: "Sr", group: "2", electronegativity: 0.95, atomicRadius: 215, ionizationEnergy: 549.5 },
+            { name: "Barium", symbol: "Ba", group: "2", electronegativity: 0.89, atomicRadius: 222, ionizationEnergy: 502.9 },
+
+            // Group 13
+            { name: "Boron", symbol: "B", group: "13", electronegativity: 2.04, atomicRadius: 85, ionizationEnergy: 800.6 },
+            { name: "Aluminum", symbol: "Al", group: "13", electronegativity: 1.61, atomicRadius: 143, ionizationEnergy: 577.5 },
+
+            // Group 14
+            { name: "Carbon", symbol: "C", group: "14", electronegativity: 2.55, atomicRadius: 77, ionizationEnergy: 1086.5 },
+            { name: "Silicon", symbol: "Si", group: "14", electronegativity: 1.9, atomicRadius: 111, ionizationEnergy: 786.5 },
+
+            // Group 15
+            { name: "Nitrogen", symbol: "N", group: "15", electronegativity: 3.04, atomicRadius: 71, ionizationEnergy: 1402.3 },
+            { name: "Phosphorus", symbol: "P", group: "15", electronegativity: 2.19, atomicRadius: 100, ionizationEnergy: 1011.8 },
+
+            // Group 16
+            { name: "Oxygen", symbol: "O", group: "16", electronegativity: 3.44, atomicRadius: 66, ionizationEnergy: 1313.9 },
+            { name: "Sulfur", symbol: "S", group: "16", electronegativity: 2.58, atomicRadius: 102, ionizationEnergy: 999.6 },
+            { name: "Selenium", symbol: "Se", group: "16", electronegativity: 2.55, atomicRadius: 117, ionizationEnergy: 941.0 },
+
+            // Group 17: Halogens
+            { name: "Fluorine", symbol: "F", group: "17", electronegativity: 3.98, atomicRadius: 57, ionizationEnergy: 1681.0 },
+            { name: "Chlorine", symbol: "Cl", group: "17", electronegativity: 3.16, atomicRadius: 79, ionizationEnergy: 1251.2 },
+            { name: "Bromine", symbol: "Br", group: "17", electronegativity: 2.96, atomicRadius: 114, ionizationEnergy: 1139.9 },
+            { name: "Iodine", symbol: "I", group: "17", electronegativity: 2.66, atomicRadius: 139, ionizationEnergy: 1008.4 },
+        ];
+
+        // Global game state variables
+        let userScore = 0;
+        let userInventory = [];
+        let gameElementsPool = [];
+        let computerElement = null;
+        let userElement = null;
+
+        // UI element references
+        const scoreDisplay = document.getElementById('score');
+        const startButton = document.getElementById('start-button');
+        const challengeScreen = document.getElementById('challenge-screen');
+        const introScreen = document.getElementById('intro-screen');
+        const userElementSelect = document.getElementById('user-element-select');
+        const userElementCard = document.getElementById('user-element-card');
+        const computerElementCard = document.getElementById('computer-element-card');
+        const computerSymbol = document.getElementById('computer-symbol');
+        const computerName = document.getElementById('computer-name');
+        const bondButton = document.getElementById('bond-button');
+        const duelButton = document.getElementById('duel-button');
+        const duelControls = document.getElementById('duel-controls');
+        const propertySelect = document.getElementById('property-select');
+        const executeDuelButton = document.getElementById('execute-duel-button');
+        const resultDisplay = document.getElementById('result-display');
+        const resultTitle = document.getElementById('result-title');
+        const resultMessage = document.getElementById('result-message');
+        const defenseText = document.getElementById('defense-text');
+        const propertyComparison = document.getElementById('property-comparison');
+        const userPropertyValue = document.getElementById('user-property-value');
+        const computerPropertyValue = document.getElementById('computer-property-value');
+        const tipMessage = document.getElementById('tip-message');
+
+        // Message box elements
+        const messageBox = document.getElementById('message-box');
+        const messageContent = document.getElementById('message-content');
+        const closeMessageButton = document.getElementById('close-message');
+        const backdrop = document.getElementById('backdrop');
+
+        // Function to show a custom message box
+        function showMessage(title, message) {
+            messageContent.innerHTML = `<h2 class="text-xl font-bold text-white mb-2">${title}</h2><p>${message}</p>`;
+            messageBox.style.display = 'block';
+            backdrop.style.display = 'block';
+        }
+
+        // Event listener for closing the message box
+        closeMessageButton.addEventListener('click', () => {
+            messageBox.style.display = 'none';
+            backdrop.style.display = 'none';
+        });
+        
+        // --- Core Game Logic Functions ---
+
+        // Function to update the inventory UI elements
+        function updateUIInventory() {
+            // Populate the dropdown with user's inventory
+            userElementSelect.innerHTML = '<option value="" disabled selected>Select an Element</option>';
+            userInventory.forEach(el => {
+                const option = document.createElement('option');
+                option.value = el.symbol;
+                option.textContent = el.name + " (" + el.symbol + ")";
+                userElementSelect.appendChild(option);
+            });
+            
+            // Display user's inventory on the intro screen
+            const userInventoryList = document.getElementById('user-inventory-list');
+            userInventoryList.innerHTML = '';
+            userInventory.forEach(el => {
+                const li = document.createElement('li');
+                li.textContent = `${el.name} (${el.symbol}) - Group ${el.group}`;
+                userInventoryList.appendChild(li);
+            });
+        }
+
+        // Function to initialize the game state
+        function initGame() {
+            // Shuffle a new deck of all elements
+            gameElementsPool = [...elementsData].sort(() => 0.5 - Math.random());
+            
+            // Draw the first 4 elements for the user's starting inventory
+            userInventory = gameElementsPool.splice(0, 4);
+            userScore = 0;
+            scoreDisplay.textContent = userScore;
+            
+            updateUIInventory();
+            
+            introScreen.classList.remove('hidden');
+            challengeScreen.classList.add('hidden');
+            duelControls.classList.add('hidden');
+            resultDisplay.classList.add('hidden');
+            startButton.textContent = "Start Challenge";
+            tipMessage.textContent = "";
+        }
+
+        // Helper function to get a random subset of elements from an array
+        function getRandomElements(arr, num) {
+            const shuffled = [...arr].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, num);
+        }
+
+        // Function to replace a used element with a new one from the pool
+        function replaceUsedElement() {
+            const usedElementSymbol = userElement.symbol;
+            const index = userInventory.findIndex(el => el.symbol === usedElementSymbol);
+            if (index > -1) {
+                userInventory.splice(index, 1);
+            }
+
+            if (gameElementsPool.length > 0) {
+                const newElement = gameElementsPool.pop();
+                userInventory.push(newElement);
+            } else {
+                showMessage("Game Over", "You have exhausted all available elements! Please reset the game to play again.");
+                startButton.textContent = "Reset Game";
+            }
+            
+            // Update the UI
+            updateUIInventory();
+
+            // Reset the dropdown and the global userElement variable for the next turn
+            userElementSelect.value = "";
+            userElement = null;
+        }
+
+        // Function to start a new challenge
+        function startChallenge() {
+            if (startButton.textContent === "Reset Game") {
+                initGame();
+                return;
+            }
+            
+            introScreen.classList.add('hidden');
+            challengeScreen.classList.remove('hidden');
+            startButton.textContent = "New Challenge";
+            
+            if (gameElementsPool.length === 0) {
+                showMessage("Game Over", "There are no more elements to challenge! Please reset the game.");
+                return;
+            }
+
+            // Reset user element UI from the previous challenge
+            userElementCard.querySelector('.symbol').textContent = "?";
+            userElementCard.querySelector('.name').textContent = "";
+            userElementCard.style.borderColor = 'transparent';
+
+            // Draw a new computer element from the pool
+            computerElement = gameElementsPool.pop();
+
+            computerSymbol.textContent = computerElement.symbol;
+            computerName.textContent = computerElement.name;
+            computerElementCard.style.backgroundColor = 'rgba(75, 85, 99, 0.5)';
+            computerElementCard.classList.remove('animate-pulse');
+
+            userElementSelect.value = "";
+            userElement = null;
+
+            document.getElementById('challenge-details').classList.remove('hidden');
+            duelControls.classList.add('hidden');
+            resultDisplay.classList.add('hidden');
+            tipMessage.textContent = "";
+        }
+
+        // Event listener for the "Start Challenge" button
+        startButton.addEventListener('click', () => {
+            startChallenge();
+        });
+
+        // Event listener for user element selection
+        userElementSelect.addEventListener('change', () => {
+            const selectedSymbol = userElementSelect.value;
+            userElement = userInventory.find(el => el.symbol === selectedSymbol);
+            if (userElement) {
+                userElementCard.querySelector('.symbol').textContent = userElement.symbol;
+                userElementCard.querySelector('.name').textContent = userElement.name;
+            }
+        });
+
+        // Function to calculate and provide a tip for the best possible action
+        function calculateBestActionAndTip(userEl, compEl) {
+            // Calculate potential Bond score
+            const enDifference = Math.abs(userEl.electronegativity - compEl.electronegativity);
+            let bondScore = Math.floor(enDifference * 20);
+            if (bondScore > 100) bondScore = 100;
+
+            // Calculate potential Duel score for each property
+            const electronegativityScore = userEl.electronegativity > compEl.electronegativity ? Math.floor(Math.abs(userEl.electronegativity - compEl.electronegativity) * 50) : 0;
+            const atomicRadiusScore = userEl.atomicRadius < compEl.atomicRadius ? Math.floor(Math.abs(userEl.atomicRadius - compEl.atomicRadius)) : 0;
+            const ionizationEnergyScore = userEl.ionizationEnergy > compEl.ionizationEnergy ? Math.floor(Math.abs(userEl.ionizationEnergy - compEl.ionizationEnergy) * 50) : 0;
+
+            const maxDuelScore = Math.max(electronegativityScore, atomicRadiusScore, ionizationEnergyScore);
+
+            let tip = "";
+            if (bondScore > maxDuelScore) {
+                tip = `Tip: Forming a Bond would have been the best choice, worth up to ${bondScore} points!`;
+            } else if (maxDuelScore > bondScore) {
+                const bestProperty = maxDuelScore === electronegativityScore ? "Electronegativity" :
+                                     maxDuelScore === atomicRadiusScore ? "Atomic Radius" : "Ionization Energy";
+                tip = `Tip: Dueling on ${bestProperty} would have been the best choice, worth up to ${maxDuelScore} points!`;
+            } else {
+                tip = `Tip: Both actions would have yielded a similar score!`;
+            }
+
+            return tip;
+        }
+
+        // Event listener for the "Form a Bond" button
+        bondButton.addEventListener('click', () => {
+            if (!userElement) {
+                showMessage("Selection Required", "Please select an element from your inventory first!");
+                return;
+            }
+            
+            const enDifference = Math.abs(userElement.electronegativity - computerElement.electronegativity);
+            let bondScore = Math.floor(enDifference * 20);
+            if (bondScore > 100) bondScore = 100;
+            
+            const bondType = getBondType(enDifference);
+            
+            userScore += bondScore;
+            scoreDisplay.textContent = userScore;
+            
+            resultTitle.textContent = "Bond Formed!";
+            resultMessage.innerHTML = `<p class="text-green-400">You successfully formed a bond!</p>
+                                     <p>This is a <span class="font-bold">${bondType}</span> bond.</p>
+                                     <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${bondScore}</span> points.</p>`;
+            resultDisplay.classList.remove('hidden');
+            
+            document.getElementById('challenge-details').classList.add('hidden');
+            tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
+
+            replaceUsedElement();
+        });
+
+        // Function to determine bond type
+        function getBondType(enDiff) {
+            if (enDiff <= 0.4) return "Nonpolar Covalent";
+            if (enDiff <= 1.7) return "Polar Covalent";
+            return "Ionic";
+        }
+
+        // Event listener for the "Duel" button
+        duelButton.addEventListener('click', () => {
+            if (!userElement) {
+                showMessage("Selection Required", "Please select an element from your inventory first!");
+                return;
+            }
+            duelControls.classList.remove('hidden');
+            document.getElementById('challenge-details').classList.add('hidden');
+        });
+
+        // Event listener for the "Execute Duel" button
+        executeDuelButton.addEventListener('click', () => {
+            const property = propertySelect.value;
+            const userValue = userElement[property];
+            const computerValue = computerElement[property];
+            
+            let win = false;
+            let comparisonMessage = "";
+            let scoreDifference = 0;
+            
+            if (property === 'electronegativity' || property === 'ionizationEnergy') {
+                if (userValue > computerValue) {
+                    win = true;
+                    scoreDifference = Math.floor(Math.abs(userValue - computerValue) * 50);
+                }
+                comparisonMessage = `${property === 'electronegativity' ? 'Electronegativity' : 'Ionization Energy'}: Higher value wins!`;
+            } else if (property === 'atomicRadius') {
+                if (userValue < computerValue) {
+                    win = true;
+                    scoreDifference = Math.floor(Math.abs(userValue - computerValue));
+                }
+                comparisonMessage = 'Atomic Radius: Lower value wins!';
+            }
+
+            if (win) {
+                userScore += scoreDifference;
+                scoreDisplay.textContent = userScore;
+                resultTitle.textContent = "You Won the Duel!";
+                resultMessage.innerHTML = `<p class="text-green-400">Your brilliant defense on the topic of <span class="font-bold">${propertySelect.options[propertySelect.selectedIndex].text}</span> was successful!</p>
+                                        <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${scoreDifference}</span> points.</p>`;
+            } else {
+                resultTitle.textContent = "You Lost the Duel.";
+                resultMessage.innerHTML = `<p class="text-red-400">Your defense was defeated. The computer's element was stronger in this property.</p>
+                                        <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">0</span> points.</p>`;
+            }
+            
+            userPropertyValue.textContent = `${userElement.name} (${userElement.symbol}) - ${userValue}`;
+            computerPropertyValue.textContent = `${computerElement.name} (${computerElement.symbol}) - ${computerValue}`;
+            propertyComparison.classList.remove('hidden');
+
+            duelControls.classList.add('hidden');
+            resultDisplay.classList.remove('hidden');
+            tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
+
+            replaceUsedElement();
+        });
+        
+        // Initial setup
+        initGame();
+    </script>
+</body>
+</html>
