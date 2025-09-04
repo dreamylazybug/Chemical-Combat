@@ -7,7 +7,7 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #1f2937, #111827);
@@ -35,6 +35,52 @@
             background-color: rgba(0, 0, 0, 0.5);
             z-index: 999;
         }
+        
+        /* New animations for atoms */
+        @keyframes bond {
+            from { transform: translateX(0); }
+            to { transform: translateX(100%); }
+        }
+        @keyframes clash {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(50%); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes pulsate {
+            0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.8), 0 0 50px rgba(255, 255, 255, 0.5); }
+            100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+        }
+        @keyframes glow-text {
+            0% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00aaff, 0 0 20px #00aaff, 0 0 25px #00aaff; }
+            50% { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00aaff, 0 0 40px #00aaff, 0 0 50px #00aaff; }
+            100% { text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00aaff, 0 0 20px #00aaff, 0 0 25px #00aaff; }
+        }
+        
+        .bond-animation-user {
+            animation: bond 1s ease-in-out forwards;
+        }
+        .bond-animation-computer {
+            animation: bond 1s ease-in-out forwards;
+            animation-direction: reverse;
+        }
+        .clash-animation-user {
+            animation: clash 0.75s ease-in-out forwards;
+        }
+        .clash-animation-computer {
+            animation: clash 0.75s ease-in-out forwards;
+            animation-direction: reverse;
+        }
+        .atom {
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .atom-pulsate {
+            animation: pulsate 1.5s infinite;
+        }
+        .glow {
+            animation: glow-text 1.5s ease-in-out infinite;
+        }
     </style>
 </head>
 <body class="text-gray-200">
@@ -61,10 +107,16 @@
                 </div>
             </div>
 
+            <!-- Atom Arena -->
+            <div id="atom-arena" class="relative w-full h-40 flex items-center justify-center p-4 bg-gray-900 rounded-full shadow-inner border border-gray-700 mb-8">
+                <div id="user-atom-container" class="absolute left-0 flex items-center justify-center w-1/2 h-full"></div>
+                <div id="computer-atom-container" class="absolute right-0 flex items-center justify-center w-1/2 h-full"></div>
+            </div>
+
             <!-- Game Display Area -->
             <div class="relative bg-gray-900 p-6 rounded-2xl shadow-xl border border-gray-700 h-96 flex flex-col justify-center items-center" id="game-display">
                 <div class="hidden" id="challenge-screen">
-                    <div class="flex justify-center items-center space-x-8 md:space-x-12">
+                    <div class="flex justify-center items-center space-x-8 md:space-x-12 mt-4">
                         <!-- User's Element -->
                         <div class="flex flex-col items-center">
                             <p class="text-xl mb-2 text-gray-400">Your Choice:</p>
@@ -138,7 +190,7 @@
                 <p id="result-message" class="text-lg"></p>
                 <div id="property-comparison" class="text-left mt-4 hidden">
                     <p class="text-gray-400">Your Element: <span id="user-property-value"></span></p>
-                    <p class="text-gray-400">Computer Element: <span id="computer-property-value"></span></p>
+                    <p class="text-400">Computer Element: <span id="computer-property-value"></span></p>
                 </div>
                 <p id="tip-message" class="mt-4 font-semibold text-sky-400"></p>
             </div>
@@ -192,6 +244,7 @@
         let gameElementsPool = [];
         let computerElement = null;
         let userElement = null;
+        const atomicScaleFactor = 0.5;
 
         // UI element references
         const scoreDisplay = document.getElementById('score');
@@ -216,13 +269,15 @@
         const userPropertyValue = document.getElementById('user-property-value');
         const computerPropertyValue = document.getElementById('computer-property-value');
         const tipMessage = document.getElementById('tip-message');
+        const userAtomContainer = document.getElementById('user-atom-container');
+        const computerAtomContainer = document.getElementById('computer-atom-container');
 
         // Message box elements
         const messageBox = document.getElementById('message-box');
         const messageContent = document.getElementById('message-content');
         const closeMessageButton = document.getElementById('close-message');
         const backdrop = document.getElementById('backdrop');
-
+        
         // Function to show a custom message box
         function showMessage(title, message) {
             messageContent.innerHTML = `<h2 class="text-xl font-bold text-white mb-2">${title}</h2><p>${message}</p>`;
@@ -235,6 +290,31 @@
             messageBox.style.display = 'none';
             backdrop.style.display = 'none';
         });
+
+        // Function to create a simple atom SVG
+        function createAtomSVG(element) {
+            const size = element.atomicRadius * atomicScaleFactor;
+            const color = getElementColor(element);
+            return `
+                <div style="width: ${size}px; height: ${size}px; background-color: ${color};" class="atom atom-pulsate flex justify-center items-center">
+                    <span class="text-white font-bold text-lg">${element.symbol}</span>
+                </div>
+            `;
+        }
+
+        // Function to get a color based on the element's group
+        function getElementColor(element) {
+            const group = parseInt(element.group);
+            if (group === 1 || group === 2) {
+                return '#f59e0b'; // Gold for Alkali/Alkaline Earth
+            } else if (group >= 13 && group <= 16) {
+                return '#60a5fa'; // Blue for non-metals and metalloids
+            } else if (group === 17) {
+                return '#ef4444'; // Red for Halogens
+            } else {
+                return '#94a3b8'; // Default grey
+            }
+        }
         
         // --- Core Game Logic Functions ---
 
@@ -277,6 +357,7 @@
             resultDisplay.classList.add('hidden');
             startButton.textContent = "Start Challenge";
             tipMessage.textContent = "";
+            resultTitle.classList.remove('glow');
         }
 
         // Helper function to get a random subset of elements from an array
@@ -329,6 +410,9 @@
             userElementCard.querySelector('.symbol').textContent = "?";
             userElementCard.querySelector('.name').textContent = "";
             userElementCard.style.borderColor = 'transparent';
+            userAtomContainer.innerHTML = '';
+            computerAtomContainer.innerHTML = '';
+            resultTitle.classList.remove('glow');
 
             // Draw a new computer element from the pool
             computerElement = gameElementsPool.pop();
@@ -337,6 +421,7 @@
             computerName.textContent = computerElement.name;
             computerElementCard.style.backgroundColor = 'rgba(75, 85, 99, 0.5)';
             computerElementCard.classList.remove('animate-pulse');
+            computerAtomContainer.innerHTML = createAtomSVG(computerElement);
 
             userElementSelect.value = "";
             userElement = null;
@@ -359,6 +444,7 @@
             if (userElement) {
                 userElementCard.querySelector('.symbol').textContent = userElement.symbol;
                 userElementCard.querySelector('.name').textContent = userElement.name;
+                userAtomContainer.innerHTML = createAtomSVG(userElement);
             }
         });
 
@@ -371,8 +457,9 @@
 
             // Calculate potential Duel score for each property
             const electronegativityScore = userEl.electronegativity > compEl.electronegativity ? Math.floor(Math.abs(userEl.electronegativity - compEl.electronegativity) * 50) : 0;
+            // The score is divided by 10 to normalize the scale and prevent overly high scores.
             const atomicRadiusScore = userEl.atomicRadius < compEl.atomicRadius ? Math.floor(Math.abs(userEl.atomicRadius - compEl.atomicRadius)) : 0;
-            const ionizationEnergyScore = userEl.ionizationEnergy > compEl.ionizationEnergy ? Math.floor(Math.abs(userEl.ionizationEnergy - compEl.ionizationEnergy) * 50) : 0;
+            const ionizationEnergyScore = userEl.ionizationEnergy > compEl.ionizationEnergy ? Math.floor(Math.abs(userEl.ionizationEnergy - compEl.ionizationEnergy) * 50 / 10) : 0;
 
             const maxDuelScore = Math.max(electronegativityScore, atomicRadiusScore, ionizationEnergyScore);
 
@@ -397,25 +484,32 @@
                 return;
             }
             
-            const enDifference = Math.abs(userElement.electronegativity - computerElement.electronegativity);
-            let bondScore = Math.floor(enDifference * 20);
-            if (bondScore > 100) bondScore = 100;
-            
-            const bondType = getBondType(enDifference);
-            
-            userScore += bondScore;
-            scoreDisplay.textContent = userScore;
-            
-            resultTitle.textContent = "Bond Formed!";
-            resultMessage.innerHTML = `<p class="text-green-400">You successfully formed a bond!</p>
-                                     <p>This is a <span class="font-bold">${bondType}</span> bond.</p>
-                                     <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${bondScore}</span> points.</p>`;
-            resultDisplay.classList.remove('hidden');
-            
-            document.getElementById('challenge-details').classList.add('hidden');
-            tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
+            // Animate the atoms
+            userAtomContainer.querySelector('.atom').classList.add('bond-animation-user');
+            computerAtomContainer.querySelector('.atom').classList.add('bond-animation-computer');
 
-            replaceUsedElement();
+            setTimeout(() => {
+                const enDifference = Math.abs(userElement.electronegativity - computerElement.electronegativity);
+                let bondScore = Math.floor(enDifference * 20);
+                if (bondScore > 100) bondScore = 100;
+                
+                const bondType = getBondType(enDifference);
+                
+                userScore += bondScore;
+                scoreDisplay.textContent = userScore;
+                
+                resultTitle.textContent = "Bond Formed!";
+                resultTitle.classList.add('glow');
+                resultMessage.innerHTML = `<p class="text-green-400">You successfully formed a bond!</p>
+                                         <p>This is a <span class="font-bold">${bondType}</span> bond.</p>
+                                         <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${bondScore}</span> points.</p>`;
+                resultDisplay.classList.remove('hidden');
+                
+                document.getElementById('challenge-details').classList.add('hidden');
+                tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
+    
+                replaceUsedElement();
+            }, 1000); // Match animation duration
         });
 
         // Function to determine bond type
@@ -437,53 +531,66 @@
 
         // Event listener for the "Execute Duel" button
         executeDuelButton.addEventListener('click', () => {
-            const property = propertySelect.value;
-            const userValue = userElement[property];
-            const computerValue = computerElement[property];
-            
-            let win = false;
-            let comparisonMessage = "";
-            let scoreDifference = 0;
-            
-            if (property === 'electronegativity' || property === 'ionizationEnergy') {
-                if (userValue > computerValue) {
-                    win = true;
-                    scoreDifference = Math.floor(Math.abs(userValue - computerValue) * 50);
+            // Animate the atoms
+            userAtomContainer.querySelector('.atom').classList.add('clash-animation-user');
+            computerAtomContainer.querySelector('.atom').classList.add('clash-animation-computer');
+
+            setTimeout(() => {
+                const property = propertySelect.value;
+                const userValue = userElement[property];
+                const computerValue = computerElement[property];
+                
+                let win = false;
+                let scoreDifference = 0;
+                
+                if (property === 'electronegativity') {
+                    if (userValue > computerValue) {
+                        win = true;
+                        scoreDifference = Math.floor(Math.abs(userValue - computerValue) * 50);
+                    }
+                } else if (property === 'ionizationEnergy') {
+                    if (userValue > computerValue) {
+                        win = true;
+                        // The score is divided by 10 to normalize the scale.
+                        scoreDifference = Math.floor(Math.abs(userValue - computerValue) * 50 / 10);
+                    }
+                } else if (property === 'atomicRadius') {
+                    if (userValue < computerValue) {
+                        win = true;
+                        scoreDifference = Math.floor(Math.abs(userValue - computerValue));
+                    }
                 }
-                comparisonMessage = `${property === 'electronegativity' ? 'Electronegativity' : 'Ionization Energy'}: Higher value wins!`;
-            } else if (property === 'atomicRadius') {
-                if (userValue < computerValue) {
-                    win = true;
-                    scoreDifference = Math.floor(Math.abs(userValue - computerValue));
+    
+                if (win) {
+                    userScore += scoreDifference;
+                    scoreDisplay.textContent = userScore;
+                    showMessage("You Won!", "Congratulations! You successfully defended your element and won the duel.");
+                    resultTitle.textContent = "You Won the Duel!";
+                    resultTitle.classList.add('glow');
+                } else {
+                    showMessage("You Lost.", "Your defense was defeated. Better luck next time!");
+                    resultTitle.textContent = "You Lost the Duel.";
+                    resultTitle.classList.remove('glow');
                 }
-                comparisonMessage = 'Atomic Radius: Lower value wins!';
-            }
-
-            if (win) {
-                userScore += scoreDifference;
-                scoreDisplay.textContent = userScore;
-                resultTitle.textContent = "You Won the Duel!";
-                resultMessage.innerHTML = `<p class="text-green-400">Your brilliant defense on the topic of <span class="font-bold">${propertySelect.options[propertySelect.selectedIndex].text}</span> was successful!</p>
-                                        <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${scoreDifference}</span> points.</p>`;
-            } else {
-                resultTitle.textContent = "You Lost the Duel.";
-                resultMessage.innerHTML = `<p class="text-red-400">Your defense was defeated. The computer's element was stronger in this property.</p>
-                                        <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">0</span> points.</p>`;
-            }
-            
-            userPropertyValue.textContent = `${userElement.name} (${userElement.symbol}) - ${userValue}`;
-            computerPropertyValue.textContent = `${computerElement.name} (${computerElement.symbol}) - ${computerValue}`;
-            propertyComparison.classList.remove('hidden');
-
-            duelControls.classList.add('hidden');
-            resultDisplay.classList.remove('hidden');
-            tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
-
-            replaceUsedElement();
+                
+                resultMessage.innerHTML = `<p class="${win ? 'text-green-400' : 'text-red-400'}">Your defense on the topic of <span class="font-bold">${propertySelect.options[propertySelect.selectedIndex].text}</span> was successful!</p>
+                                            <p class="mt-2 text-xl font-bold">You gained <span class="text-yellow-400">${win ? scoreDifference : 0}</span> points.</p>`;
+                userPropertyValue.textContent = userValue;
+                computerPropertyValue.textContent = computerValue;
+                propertyComparison.classList.remove('hidden');
+    
+                duelControls.classList.add('hidden');
+                resultDisplay.classList.remove('hidden');
+                
+                tipMessage.textContent = calculateBestActionAndTip(userElement, computerElement);
+                
+                replaceUsedElement();
+            }, 750); // Match animation duration
         });
         
-        // Initial setup
+        // Initial game setup
         initGame();
+        
     </script>
 </body>
 </html>
