@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chemistry Combat</title>
+    <title>Periodic Power-Up</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -93,7 +93,7 @@
     <div class="container mx-auto p-4 flex flex-col items-center min-h-screen justify-center">
         <!-- Main Game Area -->
         <div class="bg-gray-800 p-8 rounded-3xl shadow-2xl w-full max-w-2xl text-center border border-gray-700">
-            <h1 class="text-4xl font-bold mb-4 text-white">Chemistry Combat</h1>
+            <h1 class="text-4xl font-bold mb-4 text-white">Periodic Power-Up</h1>
             <p class="text-sm mb-6 text-gray-400">Battle with the elements!</p>
 
             <!-- Score and Instructions -->
@@ -158,12 +158,19 @@
                     </div>
                 </div>
                 <div id="intro-screen" class="p-6">
-                    <p class="text-lg text-gray-300 mb-4">Click "Start Challenge" to begin!</p>
-                    <p class="text-xs text-gray-500">
-                        <br>
-                        Your inventory includes:
-                        <ul id="user-inventory-list" class="mt-2 text-sm text-gray-400 text-left list-disc list-inside"></ul>
-                    </p>
+                    <p class="text-xl font-bold text-gray-300 mb-4">Quick Notes</p>
+                    <div class="text-left text-sm text-gray-400 space-y-4">
+                        <p>
+                            <strong>Bond Formation & Electronegativity:</strong> A bond is formed between two elements. The score you get depends on the **difference in electronegativity** between the elements. A larger difference in electronegativity creates a stronger bond, and a larger score!
+                        </p>
+                        <p>
+                            <strong>Atomic Radius:</strong> This is the size of the atom. In a duel, a smaller atomic radius (a lower value) is better!
+                        </p>
+                        <p>
+                            <strong>Ionization Energy:</strong> This is the energy required to remove an electron from an atom. In a duel, a higher ionization energy (a higher value) is better!
+                        </p>
+                    </div>
+                    <p class="text-lg text-gray-300 my-4">Click "Start Challenge" to begin!</p>
                 </div>
             </div>
 
@@ -271,6 +278,7 @@
         const tipMessage = document.getElementById('tip-message');
         const userAtomContainer = document.getElementById('user-atom-container');
         const computerAtomContainer = document.getElementById('computer-atom-container');
+        const userInventoryList = document.getElementById('user-inventory-list');
 
         // Message box elements
         const messageBox = document.getElementById('message-box');
@@ -327,15 +335,6 @@
                 option.value = el.symbol;
                 option.textContent = el.name + " (" + el.symbol + ")";
                 userElementSelect.appendChild(option);
-            });
-            
-            // Display user's inventory on the intro screen
-            const userInventoryList = document.getElementById('user-inventory-list');
-            userInventoryList.innerHTML = '';
-            userInventory.forEach(el => {
-                const li = document.createElement('li');
-                li.textContent = `${el.name} (${el.symbol}) - Group ${el.group}`;
-                userInventoryList.appendChild(li);
             });
         }
 
@@ -430,6 +429,9 @@
             duelControls.classList.add('hidden');
             resultDisplay.classList.add('hidden');
             tipMessage.textContent = "";
+            
+            // Show the user's inventory after the game starts
+            updateUIInventory();
         }
 
         // Event listener for the "Start Challenge" button
@@ -551,7 +553,7 @@
                 } else if (property === 'ionizationEnergy') {
                     if (userValue > computerValue) {
                         win = true;
-                        // The score is divided by 10 to normalize the scale.
+                        // The score is divided by 10 to normalize the scale and prevent overly high scores.
                         scoreDifference = Math.floor(Math.abs(userValue - computerValue) * 50 / 10);
                     }
                 } else if (property === 'atomicRadius') {
